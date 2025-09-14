@@ -1,4 +1,4 @@
-# meari SDK (Python, unofficial)
+# py-meari (Python, unofficial)
 
 This project is an **unofficial Python reimplementation** of the [Meari SDK](https://github.com/Mearitek/MeariSdk).  
 It aims to replicate the functionality of the original SDK to connect with the **meari platform** and manage **IP cameras** without relying on the official closed-source binaries.
@@ -22,7 +22,7 @@ It aims to replicate the functionality of the original SDK to connect with the *
 ```
 meari-main/
 │
-├── meari_Sdk/          # Core SDK reimplementation
+├── meari_sdk/          # Core SDK reimplementation
 ├── cli.py              # Command-line entrypoint
 ├── const.py            # Constants and configuration values
 ├── requirements.txt    # Python dependencies

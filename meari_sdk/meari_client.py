@@ -16,8 +16,9 @@ from paho.mqtt.client import MQTTv311
 from .const import APP_SIGN_FORMAT, BASE_DOMAIN, MEARI_KEY, MEARI_SECRET
 from .crypto_helpers import (decode_param, des_utils_encode, encode_param,
                              get_signature, md5_32)
-from .meari_error import MeariHttpError
+from .meari_error import (MeariError, MeariHttpError)
 from .random_helpers import create_random_string
+from .meari_iot_client import MeariIotClient
 
 # from .model.user_info import UserInfo
 
@@ -60,6 +61,8 @@ class MeariClient:
 
     _mqtt_client: mqtt.Client = None
     _meari_mqtt_client: mqtt.Client = None
+
+    _iot_client: MeariIotClient = None
 
     _event_handler: Optional[callable] = None
 
@@ -289,7 +292,7 @@ class MeariClient:
                 if response_json.get("resultCode") == "1001":
                     return response_json
                 else:
-                    raise RuntimeError(f"getDevice failed with resultCode: {response_json.get('resultCode')}")
+                    raise MeariError(f"getDevice failed with resultCode: {response_json.get('resultCode')}", response_json.get('resultCode'))
         except Exception as e:
             raise RuntimeError(f"Error: {e}")
 
@@ -313,6 +316,7 @@ class MeariClient:
 
     def fetch_iot_info(self) -> dict:
         self._iot_info = self.__get_iot_info(self._api_server, self._user_id, self._user_token, self._phone_code, self._phone_type, self._lng_type, self._partner, 0)
+        self._iot_client = MeariIotClient()
         return self._iot_info
 
     def get_device(self) -> dict:
@@ -454,3 +458,132 @@ class MeariClient:
         mqtt_client.connect(server_url, port, keep_alive)
 
         return mqtt_client
+
+    def query_device_status(self) -> Dict[str, int]:
+        """
+        Get device online status
+        String Intercepted SN, cameraInfo.getSnNum().substring(4)
+        Integer 0-connecting; 1-online; 2-offline; 3-sleep
+        
+        """
+        ...
+        #TODO
+
+    def get_device_params(self) -> Dict[str, str]: #return type DeviceParams.java
+        """
+        Get device parameters
+        """
+        ...
+        #TODO
+
+    def set_device_config(self, thing_name: str, sn_num: str, iot_info: int, params: dict) -> None:
+        return self.__set_device_config(self._login_data, self._iot_info, iot_info, thing_name, sn_num, params)
+
+    def __set_device_config(self, user_info, iot_info, iot_type: int, thing_name: str, sn_num: str, params: dict) -> None:
+        """
+        Sends a configuration to the device, supporting multiple types of IoT devices.
+
+        :param iot_type: type of device (2 = shadow, 3 = Meari IoT, other = HTTP API)
+        :param thing_name: device name (used for shadow)
+        :param sn_num: device serial number
+        :param params: dictionary of parameters to send (e.g. {"106": 1})
+        :param tag: identifier object for the request (used for tracking/logging)
+        :param callback: object with on_success(result) and on_error(code, message) methods
+
+        """
+
+        if iot_type == 2:
+            # AWS IoT Shadow-style
+            payload = {
+                "state": {
+                    "desired": params
+                }
+            }
+
+            #def on_success(result):
+            #    callback.on_success(result)
+            #
+            #def on_error(error):
+            #    callback.on_error(-1, str(error))
+            #
+            #try:
+            #    self.__update_shadow(
+            #        thing_name, payload,
+            #        on_success=on_success,
+            #        on_error=on_error
+            #    )
+            #except Exception as e:
+            #    on_error(e)
+
+        elif iot_type == 3:
+            # Meari IoT SDK-style
+            try:
+                return self._iot_client.set_device_config(user_info, iot_info, sn_num, params, self.__is_server(params), 0)
+            except Exception as e:
+                raise RuntimeError(f"Error: {e}")
+
+        else:
+            # HTTP REST API fallback
+            request_params = {
+                "": json.dumps(params)  # il backend si aspetta il payload come stringa JSON
+            }
+
+            country_code = user_info.get("countryCode")
+            user_token = user_info.get("userToken")
+
+
+            url = f"{self.api_server}/meari/app/iot/model/set?sn={sn_num}&iotType=4&countryCode={country_code}"
+    #
+    #       headers = self.__get_http_headers(
+    #           path="/meari/app/iot/model/set",
+    #           token=user_token
+    #       )
+    #
+    #       _LOGGER.debug(f"--->set_device_config: {url}")
+    #       _LOGGER.debug(f"Params: {request_params}")
+    #
+    #       try:
+    #           response = requests.post(
+    #               url,
+    #               data=request_params,
+    #               headers=headers
+    #           )
+    #
+    #           if response.status_code == 200:
+    #               data = response.json()
+    #               _LOGGER.info(f"set_device_config result: {data.get('result')}")
+    #
+    #               if data.get("resultCode") == 1001:
+    #                   callback.on_success(data.get("result"))
+    #               else:
+    #                   callback.on_error(data.get("resultCode"), data.get("errorMessage"))
+    #           else:
+    #               callback.on_error(response.status_code, response.text)
+    #
+    #       except Exception as e:
+    #           callback.on_error(-1, str(e))
+            ...
+            
+
+
+    def __is_server(self, params_list: dict) -> None:
+        """
+        Decides whether to send device config to server or device based on DP keys
+        :param params_list: Dictionary of DP values to set
+        """
+        is_to_server = True
+
+        try:
+            for key in params_list.keys():
+                dp = int(key)
+                # If dp is outside the [800–899] range OR it's 825, send to server
+                if dp < 800 or dp >= 900 or dp == 825:
+                    is_to_server = True
+                    break
+                else:
+                    is_to_server = False
+        except Exception as e:
+            _LOGGER.exception("Error determining is_to_server flag")
+            is_to_server = False  # Fallback to safe default
+
+        return is_to_server

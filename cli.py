@@ -82,17 +82,40 @@ class MeariCLI(cmd.Cmd):
         """
         Fetches IoT (Internet of Things) information
         """
-        
-        self.iot_info = self.client.fetch_iot_info()
-        print(self.iot_info)
+        try:
+            self.iot_info = self.client.fetch_iot_info()
+            print(self.iot_info)
+        except Exception as e:
+            print(f"Error: {e}")
+
 
     def do_get_devices(self, line):
         """
         Fetches device information
         """
+        try:
+            self.devices = self.client.get_device()
+            print(self.devices)
+        except Exception as e:
+            print(f"Error: {e}")
+
+    def do_set_device_config(self, args):
+        args_list = args.split()
+        if len(args_list) < 3:
+            print("Usage: set_device_config DEVICE_ID CODE PARAM")
+            return
+        device_id = args_list[0]
+        iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
+        code = int(args_list[1])
+        param = args_list[2]
+
+        p = {str(code): param}
         
-        self.devices = self.client.get_device()
-        print(self.devices)
+        try:
+            result = self.client.set_device_config(None, device_id, iot_type, p)
+            print(f"Configuration set successfully: {result}")
+        except Exception as e:
+            print(f"Error setting configuration: {e}")
 
     def do_hello(self, line):
         """Print a greeting."""

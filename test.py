@@ -71,3 +71,5 @@ if __name__ == "__main__":
 
 # https://openapi-euce.mearicloud.com/openapi/device/config?accessid=XXXXX&expires=1740325346&signature=XXXXX&action=set&params=eyJjb2RlIjoxMDAwMDEsImFjdGlvbiI6InNldCIsIm5hbWUiOiJpb3QiLCJpb3QiOnsiODA3Ijoie1wicHNcIjo4MCxcInRzXCI6MCxcInpzXCI6MH0ifX0%3D&deviceid=XXXXX
 # https://openapi-euce.mearicloud.com/openapi/device/config?accessid=XXXXX&expires=1740325346&signature=XXXXX&action=set&params=eyJjb2RlIjoxMDAwMDEsImFjdGlvbiI6InNldCIsIm5hbWUiOiJpb3QiLCJpb3QiOnsiODA4Ijoie30ifX0%3D&deviceid=XXXXX
+
+# https://github.com/Mearitek/MeariSdk/blob/94e045923b95e3c54b0c80960eb1cc66af185688/Android/docs/Meari%20Android%20SDK%20Guide.md#9-device-settings
