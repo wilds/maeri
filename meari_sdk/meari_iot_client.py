@@ -7,6 +7,9 @@ from .helpers import (get_timeout, format_sn)
 from .meari_error import (MeariError, MeariHttpError)
 from .crypto_helpers import get_signature
 
+from .model.user_info import UserInfo
+from .model.iot_info import IotInfo
+
 # Device API paths
 DEVICE_STATUS_PATH = "/openapi/device/status"
 DEVICE_CONFIG_PATH = "/openapi/device/config"
@@ -22,22 +25,24 @@ CUSTOMER_STATUS_MSG = "/openapi/client/status"
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class MeariIotClient:
 
-    def set_device_config(self,
-        user_info: dict,
-        iot_info: dict,
+    def set_device_config(
+        self,
+        user_info: UserInfo,
+        iot_info: IotInfo,
         sn: str,
         params_list: dict,
         is_to_server: bool,
         channel_id: int
     ) -> None:
 
-        pfKey = user_info.get('iot').get('pfKey')
+        pfKey = user_info.iot.pfKey
         http_params = {
-            "accessid": pfKey.get("accessid"),
+            "accessid": pfKey.accessid,
             "expires": get_timeout(),
-            "signature": self.__get_signature(DEVICE_CONFIG_PATH, "set", pfKey.get("accesskey")),
+            "signature": self.__get_signature(DEVICE_CONFIG_PATH, "set", pfKey.accesskey),
             "action": "set",
             "deviceid": format_sn(sn)
         }
@@ -52,7 +57,7 @@ class MeariIotClient:
 
         http_params["params"] = encoded_params
 
-        url = f"{iot_info['pfApi']['openapi']['domain']}{DEVICE_CONFIG_PATH}"
+        url = f"{iot_info.pfApi.openapi.domain}{DEVICE_CONFIG_PATH}"
 
         _LOGGER.debug(f"GET {url} with params: {http_params}")
 
@@ -62,12 +67,11 @@ class MeariIotClient:
 
             if response.status_code == 200:
 
-
                 response_json = response.json()
 
                 # --- Controlla se mancano dati ---
                 if not response_json:
-                    raise RuntimeError(f"Error: {e}")
+                    raise MeariHttpError("Empty response")
 
                 _LOGGER.info(f"meariIot--setDeviceConfig--URL: {response.url}")
                 _LOGGER.info(f"meariIot--setDeviceConfig--data: {response_json}")
@@ -81,19 +85,19 @@ class MeariIotClient:
                 if errid == 401 and reason == "Timeout":
                     raise MeariError(error_msg, result_code)
                     # Richiedi nuovi token (simulate getIotInfoV2)
-                    #def on_refresh_success():
-                    #    self.set_device_config_advanced(sn, params_list, is_to_server, channel_id, callback)
+                    # def on_refresh_success():
+                    #     self.set_device_config_advanced(sn, params_list, is_to_server, channel_id, callback)
                     #
-                    #def on_refresh_error(code, msg):
-                    #    callback.on_error(result_code, error_msg)
+                    # def on_refresh_error(code, msg):
+                    #     callback.on_error(result_code, error_msg)
                     #
-                    #try:
-                    #    self.get_iot_info_v2(on_success=on_refresh_success, on_error=on_refresh_error, retry_count=1)
-                    #except Exception as e:
-                    #    raise MeariError(error_msg, result_code)
+                    # try:
+                    #     self.get_iot_info_v2(on_success=on_refresh_success, on_error=on_refresh_error, retry_count=1)
+                    # except Exception as e:
+                    #     raise MeariError(error_msg, result_code)
                 else:
                     if result_code == 1001 or not errid:
-                        #self.deal_wake(sn)
+                        # self.deal_wake(sn)
                         return response_json
                     else:
                         raise MeariError(error_msg, result_code)

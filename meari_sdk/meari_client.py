@@ -20,11 +20,11 @@ from .meari_error import (MeariError, MeariHttpError)
 from .random_helpers import create_random_string
 from .meari_iot_client import MeariIotClient
 
+from .model.user_info import UserInfo, Mqtt
+from .model.iot_info import IotInfo
+from .model.device import MeariDevice
 
 from .helpers import is_nvr_or_base
-
-# from .model.user_info import UserInfo
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,8 +58,8 @@ class MeariClient:
     _partner: dict
 
     _api_server: str = None
-    _login_data: dict = None
-    _iot_info: dict = None
+    _login_data: UserInfo = None
+    _iot_info: IotInfo = None
     # _session: aiohttp.ClientSession
 
     _mqtt_client: mqtt.Client = None
@@ -299,17 +299,17 @@ class MeariClient:
         except Exception as e:
             raise RuntimeError(f"Error: {e}")
 
-    def login(self, user_account: str, user_password: str) -> dict:
+    def login(self, user_account: str, user_password: str) -> UserInfo:
         try:
             redirect_data = self.__redirect(self._country_code, self._phone_code, user_account.lower(), self._phone_type, self._lng_type, self._partner)
             self._api_server = redirect_data.get("apiServer")
 
-            self._login_data = self.__login(self._api_server, self._phone_code, user_account.lower(), self._phone_type, user_password, self._lng_type, False, self._partner)
-            self._user_id = self._login_data.get("userID")
-            self._user_token = self._login_data.get("userToken")
+            self._login_data = UserInfo.from_dict(self.__login(self._api_server, self._phone_code, user_account.lower(), self._phone_type, user_password, self._lng_type, False, self._partner))
+            self._user_id = self._login_data.user_id
+            self._user_token = self._login_data.user_token
 
-            # return UserInfo.from_json(self._login_data)
             return self._login_data
+
         except MeariHttpError as mhe:
             _LOGGER.error(f"MeariHttpError occurred: {mhe}")
             raise
@@ -317,19 +317,19 @@ class MeariClient:
             _LOGGER.error(f"An unexpected error occurred: {e}")
             raise RuntimeError(f"Login failed: {e}")
 
-    def fetch_iot_info(self) -> dict:
-        self._iot_info = self.__get_iot_info(self._api_server, self._user_id, self._user_token, self._phone_code, self._phone_type, self._lng_type, self._partner, 0)
+    def fetch_iot_info(self) -> IotInfo:
+        self._iot_info = IotInfo.from_dict(self.__get_iot_info(self._api_server, self._user_id, self._user_token, self._phone_code, self._phone_type, self._lng_type, self._partner, 0))
         self._iot_client = MeariIotClient()
         return self._iot_info
 
-    def get_device(self) -> dict:
+    def get_device(self) -> MeariDevice:
         device = self.__get_device(self._api_server, self._user_id, self._user_token, self._phone_code, self._phone_type, self._lng_type, self._partner)
-        return device
+        return MeariDevice.from_dict(device)
 
     def connect_mqtt_server(self) -> bool:
         # login_type = self._login_data.get('loginType')
         login_type = 2
-        aliIotEnable = int(self._iot_info.get('aliIotEnable', 0))
+        aliIotEnable = int(self._iot_info.aliIotEnable)
         if login_type == 0:
             # connection with userinfo
             # deprecated
@@ -351,25 +351,25 @@ class MeariClient:
         elif login_type == 2:
             # connection iot
             if aliIotEnable == 1:
-                self._mqtt_client = self.__add_connect_iot(1, self._login_data, self._login_data.get('iot').get('mqtt'), self._iot_info, self._partner)
+                self._mqtt_client = self.__add_connect_iot(1, self._login_data, self._login_data.iot.mqtt, self._iot_info, self._partner)
 
-            self._meari_mqtt_client = self.__add_connect_iot(3, self._login_data, self._login_data.get('iot').get('mqtt'), self._iot_info, self._partner)
+            self._meari_mqtt_client = self.__add_connect_iot(3, self._login_data, self._login_data.iot.mqtt, self._iot_info, self._partner)
 
         return self._mqtt_client is not None or self._meari_mqtt_client is not None
 
-    def __add_connect_iot(self, iot_type, user_info, mqtt_info, iot_info, partner: dict) -> None:
+    def __add_connect_iot(self, iot_type, user_info: UserInfo, mqtt_info: Mqtt, iot_info: IotInfo, partner: dict) -> None:
         if iot_type == 1:
             # ali
             # buildMqttIotService
-            client_id = str(mqtt_info['clientId'])
-            server_url = mqtt_info['host']
-            port = int(mqtt_info['port'])
-            username = mqtt_info['iotId']
-            password = mqtt_info['iotToken']
-            keep_alive = iot_info.get('keepalive', 300)
+            client_id = str(mqtt_info.clientId)
+            server_url = mqtt_info.host
+            port = int(mqtt_info.port)
+            username = mqtt_info.iotId
+            password = mqtt_info.iotToken
+            keep_alive = iot_info.keepalive or 300
 
             topics = [
-                mqtt_info['subTopic']
+                mqtt_info.subTopic
             ]
 
         elif iot_type == 2:
@@ -380,8 +380,8 @@ class MeariClient:
             # todo
             # buildMeariMqttIotService
 
-            meariplat_signature = iot_info['pfApi']['platform']['signature']
-            decoded_device_token = decode_param(meariplat_signature, user_info['userID'], iot_info['pfApi']['platform']['expireTime'], partner['source_app'])
+            meariplat_signature = iot_info.pfApi.platform.signature
+            decoded_device_token = decode_param(meariplat_signature, user_info.user_id, iot_info.pfApi.platform.expireTime, partner['source_app'])
 
             # key_temp = f"{user_info['userID']}{partner['source_app']}a{iot_info['pfApi']['platform']['expireTime']}"
             # encoded_key = base64.b64encode(key_temp.encode('utf-8')).decode('utf-8')
@@ -396,16 +396,16 @@ class MeariClient:
             meariplat_access_id = base_json_object.get("accessid")
             # meariplat_access_key = base_json_object.get("accesskey")
 
-            client_id = str(user_info['userID'])
-            server_url = iot_info['pfApi']['mqtt']['host']
-            port = int(iot_info['pfApi']['mqtt']['port'])
+            client_id = str(user_info.user_id)
+            server_url = iot_info.pfApi.mqtt.host
+            port = int(iot_info.pfApi.mqtt.port)
             username = meariplat_access_id
-            password = iot_info['pfApi']['mqttSignature']
+            password = iot_info.pfApi.mqttSignature
             keep_alive = 300
 
             topics = [
-                f"$bsssvr/iot/{user_info['userID']}/{user_info['userID']}/event/update/accepted",
-                f"$bsssvr/iot/presence/disconnected/{user_info['userID']}"
+                f"$bsssvr/iot/{user_info.user_id}/{user_info.user_id}/event/update/accepted",
+                f"$bsssvr/iot/presence/disconnected/{user_info.user_id}"
             ]
 
         # print(f"client_id {client_id}")
@@ -472,14 +472,13 @@ class MeariClient:
         ...
         # TODO
 
-    def get_device_params(self) -> Dict[str, str]:  # return type DeviceParams.java
+    def get_device_params(self, thing_name: str, sn_num: str, iot_type: int) -> Dict[str, str]:  # return type DeviceParams.java
         """
         Get device parameters
         """
-        ...
-        # TODO
+        return self.__get_iot_property(self, self._login_data, iot_type, thing_name, sn_num, None)
 
-    def __get_iot_property(self, user_info, iot_type, thing_name, sn_num, tag):
+    def __get_iot_property(self, user_info: UserInfo, iot_type, thing_name, sn_num, tag):
         if iot_type == 2:
             # try:
             #     # AWS IoT Shadow-style
@@ -506,8 +505,8 @@ class MeariClient:
 
         else:
             try:
-                country_code = user_info.get("countryCode")
-                user_token = user_info.get("userToken")
+                country_code = user_info.countryCode
+                user_token = user_info.userToken
 
                 url = f"{self.api_server}/meari/app/iot/model/get?iotType=4&countryCode={country_code()}"
                 headers = self.__get_http_headers(
@@ -523,6 +522,7 @@ class MeariClient:
                     if result_code == 1001:
                         result = data.get("jsonResult", {}).get("result", {})
                         # callback.on_success(JsonUtil.get_device_params_iot(result))
+                        return result
                     else:
                         # callback.on_failed(result_code, data.get("errorMessage"))
                         ...
@@ -531,13 +531,14 @@ class MeariClient:
                     ...
 
             except Exception as e:
+                print(e)
                 # callback.on_failed(-1, str(e))
                 ...
 
-    def set_device_config(self, thing_name: str, sn_num: str, iot_info: int, params: dict) -> None:
-        return self.__set_device_config(self._login_data, self._iot_info, iot_info, thing_name, sn_num, params)
+    def set_device_config(self, thing_name: str, sn_num: str, iot_type: int, params: dict) -> None:
+        return self.__set_device_config(self._login_data, self._iot_info, iot_type, thing_name, sn_num, params)
 
-    def __set_device_config(self, user_info, iot_info, iot_type: int, thing_name: str, sn_num: str, params: dict) -> None:
+    def __set_device_config(self, user_info: UserInfo, iot_info: IotInfo, iot_type: int, thing_name: str, sn_num: str, params: dict) -> None:
         """
         Sends a configuration to the device, supporting multiple types of IoT devices.
 
@@ -586,41 +587,43 @@ class MeariClient:
                 "": json.dumps(params)  # il backend si aspetta il payload come stringa JSON
             }
 
-            country_code = user_info.get("countryCode")
-            user_token = user_info.get("userToken")
-
+            country_code = user_info.country_code
+            user_token = user_info.user_token
 
             url = f"{self.api_server}/meari/app/iot/model/set?sn={sn_num}&iotType=4&countryCode={country_code}"
-    #
-    #       headers = self.__get_http_headers(
-    #           path="/meari/app/iot/model/set",
-    #           token=user_token
-    #       )
-    #
-    #       _LOGGER.debug(f"--->set_device_config: {url}")
-    #       _LOGGER.debug(f"Params: {request_params}")
-    #
-    #       try:
-    #           response = requests.post(
-    #               url,
-    #               data=request_params,
-    #               headers=headers
-    #           )
-    #
-    #           if response.status_code == 200:
-    #               data = response.json()
-    #               _LOGGER.info(f"set_device_config result: {data.get('result')}")
-    #
-    #               if data.get("resultCode") == 1001:
-    #                   callback.on_success(data.get("result"))
-    #               else:
-    #                   callback.on_error(data.get("resultCode"), data.get("errorMessage"))
-    #           else:
-    #               callback.on_error(response.status_code, response.text)
-    #
-    #       except Exception as e:
-    #           callback.on_error(-1, str(e))
-            ...
+
+            headers = self.__get_http_headers(
+                path="/meari/app/iot/model/set",
+                token=user_token
+            )
+
+            _LOGGER.debug(f"--->set_device_config: {url}")
+            _LOGGER.debug(f"Params: {request_params}")
+
+            try:
+                response = requests.post(
+                    url,
+                    data=request_params,
+                    headers=headers
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    _LOGGER.info(f"set_device_config result: {data.get('result')}")
+
+                    if data.get("resultCode") == 1001:
+                        # callback.on_success(data.get("result"))
+                        return data
+                    else:
+                        # callback.on_error(data.get("resultCode"), data.get("errorMessage"))
+                        ...
+                else:
+                    # callback.on_error(response.status_code, response.text)
+                    ...
+
+            except Exception as e:
+                # callback.on_error(-1, str(e))
+                print(e)
 
     def __is_server(self, params_list: dict) -> None:
         """

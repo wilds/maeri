@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from dataclass_wizard import JSONWizard
 
 from .device_params import DeviceParams
+from .base_device_info import BaseDeviceInfo
 
 
 @dataclass
@@ -21,7 +22,7 @@ class VideoCloudConfig(JSONWizard):
 
 
 @dataclass
-class CameraInfo(JSONWizard):
+class CameraInfo(BaseDeviceInfo):
     device_p2p: Optional[str] = None
     firm_id: Optional[str] = None
     trial_cloud: Optional[int] = None
@@ -86,6 +87,10 @@ class CameraInfo(JSONWizard):
     history_event_enable: Optional[int] = None
     cloud_end_time: Optional[int] = None
     permission_map: Dict[str, int] = field(default_factory=dict)
+
+    class Meta(JSONWizard.Meta):
+        key_transform = 'SNAKE'  # oppure 'CAMEL' se serve
+        recursive_classes = True
 
     # --- Methods for device management ---
 
