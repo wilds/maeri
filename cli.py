@@ -3,7 +3,6 @@ from const import KNOWN_PARTNERS, INTEGRATION_LANGUAGES
 from meari_sdk.meari_mqtt_message_id import MeariMqttMessageId
 
 import cmd
-import argparse
 import threading
 
 
@@ -41,7 +40,7 @@ class MeariCLI(cmd.Cmd):
             self.client = MeariClient(country_code=country_code, phone_code=phone_code, phone_type=phone_type, lng_type=lng_type, partner=KNOWN_PARTNERS[partner])
             self.login_data = self.client.login(user_account.lower(), user_password)
             self.iot_info = self.client.fetch_iot_info()
-            
+
             print(f"Connected to {partner} with user: {user_account}")
 
             def event_handler(msg, rawmsg):
@@ -58,7 +57,7 @@ class MeariCLI(cmd.Cmd):
 
             self.client.event_handler = event_handler
 
-            print(f"Connecting to MQTT server")
+            print("Connecting to MQTT server")
             if self.client.connect_mqtt_server():
                 # Start both MQTT client loops in a single thread
                 def start_mqtt_loops():
@@ -67,7 +66,7 @@ class MeariCLI(cmd.Cmd):
                             self.client.mqtt_client.loop_start()
                         if self.client.meari_mqtt_client:
                             self.client.meari_mqtt_client.loop_start()
-                        print(f"Connected to MQTT server")
+                        print("Connected to MQTT server")
                     except Exception as e:
                         print(f"Error starting MQTT: {e}")
 
@@ -77,6 +76,8 @@ class MeariCLI(cmd.Cmd):
         except Exception as e:
             print(f"Error: {e}")
 
+    def do_print_user_info(self, line):
+        print(self.login_data)
 
     def do_fetch_iot_info(self, line):
         """
@@ -87,7 +88,6 @@ class MeariCLI(cmd.Cmd):
             print(self.iot_info)
         except Exception as e:
             print(f"Error: {e}")
-
 
     def do_get_devices(self, line):
         """
@@ -110,7 +110,7 @@ class MeariCLI(cmd.Cmd):
         param = args_list[2]
 
         p = {str(code): param}
-        
+
         try:
             result = self.client.set_device_config(None, device_id, iot_type, p)
             print(f"Configuration set successfully: {result}")
@@ -123,16 +123,17 @@ class MeariCLI(cmd.Cmd):
 
     def do_quit(self, line):
         """Exit the CLI."""
-        if self.mqtt_thread != None:
+        if self.mqtt_thread is not None:
             self.mqtt_thread.join()
-        #self.client.mqtt_client._thread.join()
-        #self.client.meari_mqtt_client._thread.join()
+        # self.client.mqtt_client._thread.join()
+        # self.client.meari_mqtt_client._thread.join()
         return True
-    
+
     def postcmd(self, stop, line):
         print()
         return stop
-    
+
+
 if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='MeariCLI Command Line Interface')
     # parser.add_argument('-connect', nargs=2, metavar=('user', 'password'), help='Connect with user and password')
@@ -141,4 +142,4 @@ if __name__ == '__main__':
     #     user, password = args.connect
     #     print(f"Connecting with user: {user} and password: {password}")
 
-    MeariCLI().cmdloop() 
+    MeariCLI().cmdloop()

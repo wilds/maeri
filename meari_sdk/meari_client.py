@@ -20,6 +20,9 @@ from .meari_error import (MeariError, MeariHttpError)
 from .random_helpers import create_random_string
 from .meari_iot_client import MeariIotClient
 
+
+from .helpers import is_nvr_or_base
+
 # from .model.user_info import UserInfo
 
 
@@ -464,17 +467,72 @@ class MeariClient:
         Get device online status
         String Intercepted SN, cameraInfo.getSnNum().substring(4)
         Integer 0-connecting; 1-online; 2-offline; 3-sleep
-        
+
         """
         ...
-        #TODO
+        # TODO
 
-    def get_device_params(self) -> Dict[str, str]: #return type DeviceParams.java
+    def get_device_params(self) -> Dict[str, str]:  # return type DeviceParams.java
         """
         Get device parameters
         """
         ...
-        #TODO
+        # TODO
+
+    def __get_iot_property(self, user_info, iot_type, thing_name, sn_num, tag):
+        if iot_type == 2:
+            # try:
+            #     # AWS IoT Shadow-style
+            #     result = get_shadow_task(thing_name)
+            #     obj = json.loads(result)
+            #     state = obj.get("state", {})
+            #     reported = state.get("reported", {})
+            #     callback.on_success(JsonUtil.get_device_params_iot(reported))
+            # except Exception as e:
+            #     callback.on_failed(-1, str(e))
+            ...
+
+        elif iot_type == 3:
+            # Meari IoT SDK-style
+            camera_info = self._iot_client.get_camera_info()
+            is_nvr = is_nvr_or_base(camera_info)
+            nvr_channel_id = camera_info.get_nvr_channel_id() if is_nvr else None
+            is_all_config = not is_nvr
+
+            if is_nvr and nvr_channel_id > 0:
+                self._iot_client.get_device_all_config(sn_num, False, nvr_channel_id)
+            else:
+                self._iot_client.get_device_all_config(sn_num, True, is_all_config)
+
+        else:
+            try:
+                country_code = user_info.get("countryCode")
+                user_token = user_info.get("userToken")
+
+                url = f"{self.api_server}/meari/app/iot/model/get?iotType=4&countryCode={country_code()}"
+                headers = self.__get_http_headers(
+                    path="/meari/app/iot/model/get",
+                    token=user_token
+                )
+                params = {"sn": sn_num}
+
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    result_code = data.get("resultCode")
+                    if result_code == 1001:
+                        result = data.get("jsonResult", {}).get("result", {})
+                        # callback.on_success(JsonUtil.get_device_params_iot(result))
+                    else:
+                        # callback.on_failed(result_code, data.get("errorMessage"))
+                        ...
+                else:
+                    # callback.on_failed(response.status_code, response.text)
+                    ...
+
+            except Exception as e:
+                # callback.on_failed(-1, str(e))
+                ...
 
     def set_device_config(self, thing_name: str, sn_num: str, iot_info: int, params: dict) -> None:
         return self.__set_device_config(self._login_data, self._iot_info, iot_info, thing_name, sn_num, params)
@@ -494,26 +552,26 @@ class MeariClient:
 
         if iot_type == 2:
             # AWS IoT Shadow-style
-            payload = {
-                "state": {
-                    "desired": params
-                }
-            }
-
-            #def on_success(result):
-            #    callback.on_success(result)
+            # payload = {
+            #     "state": {
+            #         "desired": params
+            #     }
+            # }
+            # def on_success(result):
+            #     callback.on_success(result)
             #
-            #def on_error(error):
-            #    callback.on_error(-1, str(error))
+            # def on_error(error):
+            #     callback.on_error(-1, str(error))
             #
-            #try:
-            #    self.__update_shadow(
-            #        thing_name, payload,
-            #        on_success=on_success,
-            #        on_error=on_error
-            #    )
-            #except Exception as e:
-            #    on_error(e)
+            # try:
+            #     self.__update_shadow(
+            #         thing_name, payload,
+            #         on_success=on_success,
+            #         on_error=on_error
+            #     )
+            # except Exception as e:
+            #     on_error(e)
+            ...
 
         elif iot_type == 3:
             # Meari IoT SDK-style
@@ -563,8 +621,6 @@ class MeariClient:
     #       except Exception as e:
     #           callback.on_error(-1, str(e))
             ...
-            
-
 
     def __is_server(self, params_list: dict) -> None:
         """
@@ -583,7 +639,7 @@ class MeariClient:
                 else:
                     is_to_server = False
         except Exception as e:
-            _LOGGER.exception("Error determining is_to_server flag")
+            _LOGGER.exception(f"Error determining is_to_server flag. err: {e}")
             is_to_server = False  # Fallback to safe default
 
         return is_to_server

@@ -94,13 +94,13 @@ class MeariIotClient:
                 else:
                     if result_code == 1001 or not errid:
                         #self.deal_wake(sn)
-                        return response_json   
+                        return response_json
                     else:
                         raise MeariError(error_msg, result_code)
 
         except Exception as e:
             raise RuntimeError(f"Error: {e}")
-                
+
     def __set_params_json(self, params_list: dict, channel_id: int) -> str:
         """
         Builds the parameter JSON string required by the Meari IoT API.
@@ -125,3 +125,9 @@ class MeariIotClient:
     def __get_signature(self, path: str, action: str, access_key: str) -> str:
         origin = f"GET\n\n\n{get_timeout()}\n{path}\n{action}"
         return get_signature(origin, access_key)
+
+    def get_camera_info(self) -> None:
+        ...
+
+    def get_device_all_config(self, sn_num, is_to_server, channel_id) -> None:
+        ...

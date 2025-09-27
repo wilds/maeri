@@ -1,5 +1,6 @@
 import datetime
 
+
 def get_timeout() -> str:
     """
     Returns a UTC timestamp (in seconds) representing the current time + 60 seconds,
@@ -32,3 +33,11 @@ def format_sn(sn: str) -> str:
         return "0000000" + sn
     else:
         return sn[4:]
+
+
+def is_nvr_or_base_by_id(device_type_id: int) -> bool:
+    return device_type_id in (11, 17)
+
+
+def is_nvr_or_base(camera_info) -> bool:
+    return camera_info is not None and is_nvr_or_base_by_id(camera_info.get_dev_type_id())
