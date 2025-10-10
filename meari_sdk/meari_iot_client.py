@@ -9,6 +9,7 @@ from .crypto_helpers import get_signature
 
 from .model.user_info import UserInfo
 from .model.iot_info import IotInfo
+from .model.camera_info import CameraInfo
 
 # Device API paths
 DEVICE_STATUS_PATH = "/openapi/device/status"
@@ -130,7 +131,7 @@ class MeariIotClient:
         origin = f"GET\n\n\n{get_timeout()}\n{path}\n{action}"
         return get_signature(origin, access_key)
 
-    def get_camera_info(self) -> None:
+    def get_camera_info(self) -> CameraInfo:
         ...
 
     def get_device_all_config(self, sn_num, is_to_server, channel_id) -> None:

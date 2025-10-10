@@ -7,6 +7,7 @@ from dataclass_wizard import JSONWizard
 
 from .device_params import DeviceParams
 from .base_device_info import BaseDeviceInfo
+from ..helpers import is_low_power_device, is_iothub
 
 
 @dataclass
@@ -127,3 +128,18 @@ class CameraInfo(BaseDeviceInfo):
     def is_chime_device(self) -> bool:
         """Return True if the device is a chime type."""
         return getattr(self, "device_type_id", None) == 9
+
+    def is_low_power_device(self) -> bool:
+        return is_low_power_device(self)
+
+    def is_iot(self) -> bool:
+        return is_iothub(self)
+
+    def is_chime(self) -> bool:
+        """
+        Returns True if this device is a chime (device type ID == 9).
+
+        Equivalent to Java:
+            return this.getDevTypeID() == 9;
+        """
+        return self.dev_type_id == 9
