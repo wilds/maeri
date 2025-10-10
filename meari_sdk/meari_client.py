@@ -308,6 +308,9 @@ class MeariClient:
             self._user_id = self._login_data.user_id
             self._user_token = self._login_data.user_token
 
+            if (self._login_data.api_server is None):
+                self._login_data.api_server = self._api_server
+
             return self._login_data
 
         except MeariHttpError as mhe:
@@ -316,6 +319,30 @@ class MeariClient:
         except Exception as e:
             _LOGGER.error(f"An unexpected error occurred: {e}")
             raise RuntimeError(f"Login failed: {e}")
+
+    def load_login_data_from_file(self, filename):
+        try:
+            with open(filename, "r") as file:
+                data = json.load(file)
+
+            self._login_data = UserInfo.from_dict(data)
+            self._api_server = self._login_data.api_server
+            self._user_id = self._login_data.user_id
+            self._user_token = self._login_data.user_token
+
+            return self._login_data
+
+        except Exception as e:
+            _LOGGER.error(f"An unexpected error occurred: {e}")
+            raise RuntimeError(f"Login failed: {e}")
+
+    def store_login_data_to_file(self, filename):
+        try:
+            with open("login_data.json", "w") as file:
+                json.dump(self._login_data.to_dict(), file)
+        except Exception as e:
+            _LOGGER.error(f"An unexpected error occurred: {e}")
+            raise RuntimeError(f"Login save failed: {e}")
 
     def fetch_iot_info(self) -> IotInfo:
         self._iot_info = IotInfo.from_dict(self.__get_iot_info(self._api_server, self._user_id, self._user_token, self._phone_code, self._phone_type, self._lng_type, self._partner, 0))

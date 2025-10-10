@@ -38,10 +38,16 @@ class MeariCLI(cmd.Cmd):
 
         try:
             self.client = MeariClient(country_code=country_code, phone_code=phone_code, phone_type=phone_type, lng_type=lng_type, partner=KNOWN_PARTNERS[partner])
-            self.login_data = self.client.login(user_account.lower(), user_password)
+
+            if (user_account == ''):
+                self.login_data = self.client.load_login_data_from_file("./login_data.json")
+            else:
+                self.login_data = self.client.login(user_account.lower(), user_password)
             self.iot_info = self.client.fetch_iot_info()
 
             print(f"Connected to {partner} with user: {user_account}")
+
+            self.client.store_login_data_to_file("./login_data.json")
 
             def event_handler(msg, rawmsg):
                 print(msg)
