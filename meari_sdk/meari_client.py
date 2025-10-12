@@ -23,6 +23,7 @@ from .meari_iot_client import MeariIotClient
 from .model.user_info import UserInfo, Mqtt
 from .model.iot_info import IotInfo
 from .model.device import MeariDevice
+from .model.camera_info import CameraInfo
 
 from .helpers import is_nvr_or_base
 
@@ -503,7 +504,7 @@ class MeariClient:
         """
         Get device parameters
         """
-        return self.__get_iot_property(self, self._login_data, iot_type, thing_name, sn_num, None)
+        return self.__get_iot_property(self._login_data, iot_type, thing_name, sn_num, None)
 
     def __get_iot_property(self, user_info: UserInfo, iot_type, thing_name, sn_num, tag):
         if iot_type == 2:
@@ -520,15 +521,15 @@ class MeariClient:
 
         elif iot_type == 3:
             # Meari IoT SDK-style
-            camera_info = self._iot_client.get_camera_info()
+            camera_info: CameraInfo = None  # TODO: get camera info by sn_num
             is_nvr = is_nvr_or_base(camera_info)
-            nvr_channel_id = camera_info.get_nvr_channel_id() if is_nvr else None
+            nvr_channel_id = camera_info.nvr_channel_id if is_nvr else None
             is_all_config = not is_nvr
 
             if is_nvr and nvr_channel_id > 0:
-                self._iot_client.get_device_all_config(sn_num, False, nvr_channel_id)
+                return self._iot_client.get_device_all_config(self._login_data, self._iot_info, sn_num, False, nvr_channel_id)
             else:
-                self._iot_client.get_device_all_config(sn_num, True, is_all_config)
+                return self._iot_client.get_device_all_config(self._login_data, self._iot_info, sn_num, True, is_all_config)
 
         else:
             try:
@@ -604,7 +605,7 @@ class MeariClient:
         elif iot_type == 3:
             # Meari IoT SDK-style
             try:
-                return self._iot_client.set_device_config(user_info, iot_info, sn_num, params, self.__is_server(params), 0)
+                return self._iot_client.set_device_config(user_info, iot_info, sn_num, params, True, 0)
             except Exception as e:
                 raise RuntimeError(f"Error: {e}")
 
@@ -651,6 +652,20 @@ class MeariClient:
             except Exception as e:
                 # callback.on_error(-1, str(e))
                 print(e)
+
+    def get_device_config(self, thing_name: str, sn_num: str, iot_type: int, params: dict) -> None:
+        return self.__get_device_config(self._login_data, self._iot_info, iot_type, thing_name, sn_num, params)
+
+    def __get_device_config(self, user_info: UserInfo, iot_info: IotInfo, iot_type: int, thing_name: str, sn_num: str, params: dict) -> None:
+        # TODO
+        if iot_type == 2:
+            ...
+        elif iot_type == 3:
+            # Meari IoT SDK-style
+            try:
+                return self._iot_client.get_device_config(user_info, iot_info, sn_num, params, self.__is_server(params), 0)
+            except Exception as e:
+                raise RuntimeError(f"Error: {e}")
 
     def __is_server(self, params_list: dict) -> None:
         """

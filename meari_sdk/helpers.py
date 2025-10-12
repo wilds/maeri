@@ -97,3 +97,12 @@ def is_iothub(info) -> bool:
         is_iothub = False
 
     return is_iothub
+
+
+def parse_status(status_str: str) -> int:
+    mapping = {
+        "online": 1,
+        "offline": 2,
+        "dormancy": 3
+    }
+    return mapping.get(status_str.strip().lower(), 0)

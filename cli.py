@@ -31,7 +31,6 @@ class MeariCLI(cmd.Cmd):
         user_password = args_list[1] if len(args_list) > 1 else ''
         lng_type = args_list[2] if len(args_list) > 2 else 'it'
         partner = args_list[3] if len(args_list) > 3 else 'iegeek'
-        print(f"Connecting to {partner} with user: {user_account}")
         country_code = INTEGRATION_LANGUAGES[lng_type]["country_code"]
         phone_code = INTEGRATION_LANGUAGES[lng_type]["phone_code"]
         phone_type = "a"
@@ -40,12 +39,14 @@ class MeariCLI(cmd.Cmd):
             self.client = MeariClient(country_code=country_code, phone_code=phone_code, phone_type=phone_type, lng_type=lng_type, partner=KNOWN_PARTNERS[partner])
 
             if (user_account == ''):
+                print(f"Connecting to {partner} - restore session")
                 self.login_data = self.client.load_login_data_from_file("./login_data.json")
             else:
+                print(f"Connecting to {partner} with user: {user_account}")
                 self.login_data = self.client.login(user_account.lower(), user_password)
             self.iot_info = self.client.fetch_iot_info()
 
-            print(f"Connected to {partner} with user: {user_account}")
+            print(f"Connected to {partner} with user: {self.login_data.user_account}")
 
             self.client.store_login_data_to_file("./login_data.json")
 
@@ -122,6 +123,38 @@ class MeariCLI(cmd.Cmd):
             print(f"Configuration set successfully: {result}")
         except Exception as e:
             print(f"Error setting configuration: {e}")
+
+    def do_get_device_config(self, args):
+        args_list = args.split()
+        if len(args_list) < 3:
+            print("Usage: get_device_config DEVICE_ID CODE PARAM")
+            return
+        device_id = args_list[0]
+        iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
+        code = int(args_list[1])
+        param = args_list[2]
+
+        p = {str(code): param}
+
+        try:
+            result = self.client.get_device_config(None, device_id, iot_type, p)
+            print(f"Configuration get successfully: {result}")
+        except Exception as e:
+            print(f"Error getting configuration: {e}")
+
+    def do_get_device_params(self, args):
+        args_list = args.split()
+        if len(args_list) < 1:
+            print("Usage: get_device_params DEVICE_ID")
+            return
+        device_id = args_list[0]
+        iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
+
+        try:
+            result = self.client.get_device_params(None, device_id, iot_type)
+            print(f"Configuration get successfully: {result}")
+        except Exception as e:
+            print(f"Error getting configuration: {e}")
 
     def do_hello(self, line):
         """Print a greeting."""
