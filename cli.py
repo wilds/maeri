@@ -84,11 +84,32 @@ class MeariCLI(cmd.Cmd):
             print(f"Error: {e}")
 
     def do_print_user_info(self, line):
+        """
+        Prints the current user's login information.
+
+        This command displays the login data currently loaded or retrieved during
+        the last connection session. The information typically includes user account
+        details such as username, authentication tokens, and session metadata.
+
+        Usage:
+            >> print_user_info
+        """
         print(self.login_data)
 
     def do_fetch_iot_info(self, line):
         """
-        Fetches IoT (Internet of Things) information
+        Fetches IoT (Internet of Things) platform information for the current session.
+
+        This command retrieves general information from the Meari IoT platform,
+        including account linkage data, platform configuration, and available services.
+
+        Example:
+            >> fetch_iot_info
+
+        Notes:
+            - The method calls `self.client.fetch_iot_info()` from the Meari SDK.
+            - The result typically contains information about cloud region, MQTT endpoints,
+              and integration metadata.
         """
         try:
             self.iot_info = self.client.fetch_iot_info()
@@ -98,7 +119,18 @@ class MeariCLI(cmd.Cmd):
 
     def do_get_devices(self, line):
         """
-        Fetches device information
+        Fetches the list of devices associated with the current user's account.
+
+        This command retrieves all devices registered under the logged-in account
+        (e.g., cameras, sensors, or smart devices linked to the Meari ecosystem).
+
+        Example:
+            >> get_devices
+
+        Notes:
+            - Uses `self.client.get_device()` to query the device list from the Meari API.
+            - The result may include device identifiers, names, models, online status,
+              and binding information.
         """
         try:
             self.devices = self.client.get_device()
@@ -107,6 +139,22 @@ class MeariCLI(cmd.Cmd):
             print(f"Error: {e}")
 
     def do_set_device_config(self, args):
+        """
+        Sets a configuration parameter on a specific IoT device.
+
+        Args:
+            - DEVICE_ID (str): Serial number of the device .
+            - CODE (int): The configuration code to modify (depends on the device model and SDK specs).
+            - PARAM (int): The new value to assign to the specified configuration code.
+
+        Example:
+            >> set_device_config 1234567890 1001 1
+
+        Notes:
+            - Uses IoT type 3 by default (Meari SDK convention).
+            - The configuration parameters are passed as a dictionary where
+              the key is the configuration code (as a string) and the value is the parameter.
+        """
         args_list = args.split()
         if len(args_list) < 3:
             print("Usage: set_device_config DEVICE_ID CODE PARAM")
@@ -125,6 +173,21 @@ class MeariCLI(cmd.Cmd):
             print(f"Error setting configuration: {e}")
 
     def do_get_device_config(self, args):
+        """
+        Retrieves a specific configuration parameter from a device.
+
+        Args:
+            - DEVICE_ID (str): Serial number of the device.
+            - CODE (int): The configuration code to query.
+
+        Example:
+            >> get_device_config 1234567890 1001
+
+        Notes:
+            - Uses IoT type 3 by default (Meari SDK convention).
+            - The command requests the current configuration value for the specified
+              code and prints the response from the Meari API.
+        """
         args_list = args.split()
         if len(args_list) < 2:
             print("Usage: get_device_config DEVICE_ID CODE")
@@ -142,6 +205,20 @@ class MeariCLI(cmd.Cmd):
             print(f"Error getting configuration: {e}")
 
     def do_get_device_params(self, args):
+        """
+        Retrieves all available parameters and their current values for a given device.
+
+        Args:
+            - DEVICE_ID (str): The unique identifier of the device.
+
+        Example:
+            >> get_device_params 1234567890
+
+        Notes:
+            - Uses IoT type 3 by default (Meari SDK convention).
+            - This command fetches a complete parameter list from the device,
+              including status and configuration data.
+        """
         args_list = args.split()
         if len(args_list) < 1:
             print("Usage: get_device_params DEVICE_ID")
@@ -154,10 +231,6 @@ class MeariCLI(cmd.Cmd):
             print(f"Configuration get successfully: {result}")
         except Exception as e:
             print(f"Error getting configuration: {e}")
-
-    def do_hello(self, line):
-        """Print a greeting."""
-        print("Hello, World!")
 
     def do_quit(self, line):
         """Exit the CLI."""
