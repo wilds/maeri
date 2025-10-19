@@ -699,7 +699,7 @@ class MeariClient:
             except Exception as e:
                 raise RuntimeError(f"Error: {e}")
 
-    def __is_server(self, params_list: dict) -> None:
+    def __is_server(self, params_list: dict | list) -> None:
         """
         Decides whether to send device config to server or device based on DP keys
         :param params_list: Dictionary of DP values to set
@@ -707,7 +707,9 @@ class MeariClient:
         is_to_server = True
 
         try:
-            for key in params_list.keys():
+            keys = params_list.keys() if isinstance(params_list, dict) else params_list
+
+            for key in keys:
                 dp = int(key)
                 # If dp is outside the [800–899] range OR it's 825, send to server
                 if dp < 800 or dp >= 900 or dp == 825:
