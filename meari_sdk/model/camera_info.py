@@ -6,6 +6,8 @@ from typing import Dict, List, Optional
 from dataclass_wizard import JSONWizard
 
 from .device_params import DeviceParams
+from .base_device_info import BaseDeviceInfo
+from ..helpers import is_low_power_device, is_iothub
 
 
 @dataclass
@@ -21,7 +23,7 @@ class VideoCloudConfig(JSONWizard):
 
 
 @dataclass
-class CameraInfo(JSONWizard):
+class CameraInfo(BaseDeviceInfo):
     device_p2p: Optional[str] = None
     firm_id: Optional[str] = None
     trial_cloud: Optional[int] = None
@@ -87,6 +89,10 @@ class CameraInfo(JSONWizard):
     cloud_end_time: Optional[int] = None
     permission_map: Dict[str, int] = field(default_factory=dict)
 
+    class Meta(JSONWizard.Meta):
+        key_transform = 'SNAKE'  # oppure 'CAMEL' se serve
+        recursive_classes = True
+
     # --- Methods for device management ---
 
     def add_sub_device(self, camera_info: CameraInfo):
@@ -122,3 +128,18 @@ class CameraInfo(JSONWizard):
     def is_chime_device(self) -> bool:
         """Return True if the device is a chime type."""
         return getattr(self, "device_type_id", None) == 9
+
+    def is_low_power_device(self) -> bool:
+        return is_low_power_device(self)
+
+    def is_iot(self) -> bool:
+        return is_iothub(self)
+
+    def is_chime(self) -> bool:
+        """
+        Returns True if this device is a chime (device type ID == 9).
+
+        Equivalent to Java:
+            return this.getDevTypeID() == 9;
+        """
+        return self.dev_type_id == 9

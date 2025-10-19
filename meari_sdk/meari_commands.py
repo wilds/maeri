@@ -7,9 +7,9 @@ SET_NVR_CHANNEL_LED_ENABLE = 103     # status (0 = off, 1 = on), con channelId (
 SET_UPDATE_ENABLE = 203               # status (0 = no update automatico, 1 = update automatico)
 SET_ROTATE_ENABLE = 102               # status (0 = disattiva rotazione, 1 = attiva)
 SET_MOTION_DETECTION_ENABLE = 106    # enable (0 = off, 1 = on)
-SET_MOTION_DETECTION_SENSITIVITY = 107 # sensitivity (1–5 o 1–10)
+SET_MOTION_DETECTION_SENSITIVITY = 107  # sensitivity (1–5 o 1–10)
 SET_SOUND_DETECTION_ENABLE = 109     # status (0 = off, 1 = on)
-SET_SOUND_DETECTION_SENSITIVITY = 110 # sensitivity (1–5 o 1–10)
+SET_SOUND_DETECTION_SENSITIVITY = 110  # sensitivity (1–5 o 1–10)
 
 SET_SD_RECORD_VIDEO_ENABLE = 140      # enable (0 = disattivo, 1 = attivo)
 SET_PLAYBACK_RECORD_VIDEO_TYPE = 104  # type (0 = continuo, 1 = movimento)
@@ -64,7 +64,7 @@ UPGRADE_FIRMWARE = 803                # param: OTAUpgradeInfo (string firmware i
 REFRESH_PROPERTY = 809                # param: propertyList (stringified JSON array di property IDs)
 
 GET_SD_CARD_INFO = "809"              # codici 114, 115, 116, 290 + param t (timestamp)
-START_PTZ = "807"                     # params: ps (pan), ts (tilt), zs (zoom), t (timestamp)
+START_PTZ = "807"                     # params: ps (pan), ts (tilt), zs (zoom), t (timestamp)   #body:{"code":100001,"action":"set","name":"iot","iot":{"807":"{\"ps\":-80,\"ts\":0,\"zs\":0}"}}
 STOP_PTZ = "808"                      # param t (timestamp)
 START_PATROL = "822"                  # param t (timestamp)
 SET_TIMED_PATROL = "196"              # timeList stringa di orari
@@ -89,4 +89,4 @@ SET_WIRELESS_CHIME_ENABLE = "157"     # enable (0/1)
 SET_WIRELESS_CHIME_VOLUME = "158"     # volume int (0-100)
 SET_WIRELESS_CHIME_SELECT_SONG = "160"  # song nome o ID del brano
 
-#TODO: add others commands
+# TODO: add others commands

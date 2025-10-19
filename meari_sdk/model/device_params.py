@@ -4,7 +4,7 @@ from dataclass_wizard import JSONWizard
 
 
 @dataclass
-class DeviceParams(JSONWizard, key_transform='SNAKE'):
+class DeviceParams(JSONWizard):
     user_id: Optional[str] = None
     device_time_zone: Optional[str] = None
     device_key: Optional[str] = None
@@ -242,3 +242,7 @@ class DeviceParams(JSONWizard, key_transform='SNAKE'):
     tease_plan: Optional[str] = None
     screen_connect_status: Optional[int] = None
     baby_status: Optional[int] = None
+
+    class Meta(JSONWizard.Meta):
+        key_transform = 'SNAKE'  # oppure 'CAMEL' se serve
+        recursive_classes = True
