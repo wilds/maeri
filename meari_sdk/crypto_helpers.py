@@ -51,28 +51,26 @@ def des_utils_encode_with_params(str_value: str, str2: str, str3: str) -> str:
     return base64.b64encode(encrypted_text).decode('utf-8')
 
 
-"""
- def decode_device_token(key: str, encrypted_str: str, decode_base64: bool) -> str:
-     if not key or len(key) < 16 or not encrypted_str:
-         return None
+def decode_device_token(key: str, encrypted_str: str, decode_base64: bool) -> str:
+    if not key or len(key) < 16 or not encrypted_str:
+        return None
 
-     try:
-         decoded_bytes = base64.b64decode(encrypted_str)
-         key_iv = key[:16].encode('utf-8')
-         cipher = AES.new(key_iv, AES.MODE_CBC, key_iv)
-         decrypted_bytes = cipher.decrypt(decoded_bytes)
-         decrypted_bytes = unpad(decrypted_bytes, AES.block_size)
+    try:
+        decoded_bytes = base64.b64decode(encrypted_str)
+        key_iv = key[:16].encode('utf-8')
+        cipher = AES.new(key_iv, AES.MODE_CBC, key_iv)
+        decrypted_bytes = cipher.decrypt(decoded_bytes)
+        decrypted_bytes = unpad(decrypted_bytes, AES.block_size)
 
-         if decode_base64:
-             decrypted_bytes = base64.b64decode(decrypted_bytes)
+        if decode_base64:
+            decrypted_bytes = base64.b64decode(decrypted_bytes)
 
-         result = decrypted_bytes.decode('utf-8')
-         return result
+        result = decrypted_bytes.decode('utf-8')
+        return result
 
-     except Exception as e:
-         print(f"decodeDeviceToken error: {str(e)}")
-         return None
-"""
+    except Exception as e:
+        print(f"decodeDeviceToken error: {str(e)}")
+        return None
 
 
 def decode_img(image_data: bytes, device_sn: str) -> bytes:

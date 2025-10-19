@@ -25,6 +25,13 @@ CUSTOMER_ACK_CONFIRM = "/openapi/iot/client/ack"
 CUSTOMER_PULL_MSG = "/openapi/iot/client/pull"
 CUSTOMER_STATUS_MSG = "/openapi/client/status"
 
+
+# logging.basicConfig(
+#     level=logging.DEBUG,                      # livello minimo dei messaggi da mostrare
+#     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",  # formato della stampa
+#     handlers=[logging.StreamHandler()]        # handler per la console
+# )
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -211,7 +218,7 @@ class MeariIotClient:
         except Exception as e:
             _LOGGER.error(f"Error waking device {sn}: {e}")
 
-    def __params_json(self, action: str, params_list: dict, channel_id: int) -> str:
+    def __params_json(self, action: str, params_list: dict | list, channel_id: int) -> str:
         """
         Builds the parameter JSON string required by the Meari IoT API.
 
@@ -257,8 +264,8 @@ class MeariIotClient:
                 if not response_json:
                     raise MeariHttpError("Empty response")
 
-                _LOGGER.info(f"meariIot--setDeviceConfig--URL: {response.url}")
-                _LOGGER.info(f"meariIot--setDeviceConfig--data: {response_json}")
+                _LOGGER.info(f"meariIot--request--URL: {response.url}")
+                _LOGGER.info(f"meariIot--request--data: {response_json}")
 
                 # --- Controllo errori con errid === 401 + Timeout ---
                 errid = response_json.get("errid")

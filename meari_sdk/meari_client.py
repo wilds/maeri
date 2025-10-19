@@ -15,7 +15,7 @@ from paho.mqtt.client import MQTTv311
 
 from .const import APP_SIGN_FORMAT, BASE_DOMAIN, MEARI_KEY, MEARI_SECRET
 from .crypto_helpers import (decode_param, des_utils_encode, encode_param,
-                             get_signature, md5_32)
+                             get_signature, md5_32, decode_device_token)
 from .meari_error import (MeariError, MeariHttpError)
 from .random_helpers import create_random_string
 from .meari_iot_client import MeariIotClient
@@ -256,7 +256,39 @@ class MeariClient:
                 # print(response.text)
                 response_json = response.json()
                 if response_json.get("resultCode") == "1001":
-                    return response_json.get("result", {})
+
+                    result = response_json.get("result", {})
+                    plat_json = result.get("pfApi").get("platform")
+
+                    if "signature" in plat_json:
+                        expire_time = plat_json.get("expireTime")
+                        key_temp = f"{user_id}{partner['source_app']}a{expire_time}"
+
+                        try:
+                            _LOGGER.info(f"getIotInfoV2: keyTemp={key_temp}")
+
+                            key = base64.b64encode(key_temp.encode("utf-8")).decode("utf-8")
+                            _LOGGER.info(f"getIotInfoV2: key={key}")
+
+                            temp = decode_device_token(key, plat_json.get('signature'), False)
+                            _LOGGER.info(f"getIotInfoV2: temp={temp}")
+
+                            info_encoded = temp.split("-")[0].encode("utf-8")
+                            info_data = base64.b64decode(info_encoded)
+                            info_str = info_data.decode("utf-8")
+
+                            _LOGGER.info(f"getIotInfoV2: infoStr={info_str}")
+
+                            json_object = json.loads(info_str)
+
+                            # trick
+                            self._login_data.iot.pfKey.accessid = json_object.get("accessid")
+                            self._login_data.iot.pfKey.accesskey = json_object.get("accesskey")
+
+                        except Exception as e:
+                            _LOGGER.info(f"getIotInfoV2: resolve accessid exception: {e}")
+
+                    return result
                 else:
                     raise RuntimeError(f"getIotInfo failed with resultCode: {response_json.get('resultCode')}")
         except Exception as e:

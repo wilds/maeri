@@ -116,7 +116,7 @@ class MeariCLI(cmd.Cmd):
         code = int(args_list[1])
         param = args_list[2]
 
-        p = {str(code): param}
+        p = {str(code): int(param)}
 
         try:
             result = self.client.set_device_config(None, device_id, iot_type, p)
@@ -126,15 +126,14 @@ class MeariCLI(cmd.Cmd):
 
     def do_get_device_config(self, args):
         args_list = args.split()
-        if len(args_list) < 3:
-            print("Usage: get_device_config DEVICE_ID CODE PARAM")
+        if len(args_list) < 2:
+            print("Usage: get_device_config DEVICE_ID CODE")
             return
         device_id = args_list[0]
         iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
         code = int(args_list[1])
-        param = args_list[2]
 
-        p = {str(code): param}
+        p = [str(code)]
 
         try:
             result = self.client.get_device_config(None, device_id, iot_type, p)

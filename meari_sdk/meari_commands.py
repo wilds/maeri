@@ -64,7 +64,7 @@ UPGRADE_FIRMWARE = 803                # param: OTAUpgradeInfo (string firmware i
 REFRESH_PROPERTY = 809                # param: propertyList (stringified JSON array di property IDs)
 
 GET_SD_CARD_INFO = "809"              # codici 114, 115, 116, 290 + param t (timestamp)
-START_PTZ = "807"                     # params: ps (pan), ts (tilt), zs (zoom), t (timestamp)
+START_PTZ = "807"                     # params: ps (pan), ts (tilt), zs (zoom), t (timestamp)   #body:{"code":100001,"action":"set","name":"iot","iot":{"807":"{\"ps\":-80,\"ts\":0,\"zs\":0}"}}
 STOP_PTZ = "808"                      # param t (timestamp)
 START_PATROL = "822"                  # param t (timestamp)
 SET_TIMED_PATROL = "196"              # timeList stringa di orari
