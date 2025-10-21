@@ -5,6 +5,8 @@ from meari_sdk.meari_mqtt_message_id import MeariMqttMessageId
 import cmd
 import threading
 
+import meari_sdk.meari_commands
+
 
 class MeariCLI(cmd.Cmd):
     prompt = '>> '
@@ -161,7 +163,7 @@ class MeariCLI(cmd.Cmd):
             return
         device_id = args_list[0]
         iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
-        code = int(args_list[1])
+        code = int(args_list[1]) if args_list[1].isdigit() else getattr(meari_sdk.meari_commands, args_list[1], None)
         param = args_list[2]
 
         p = {str(code): int(param)}
@@ -194,7 +196,7 @@ class MeariCLI(cmd.Cmd):
             return
         device_id = args_list[0]
         iot_type = 3  # Assuming IoT type 3 for Meari IoT SDK-style
-        code = int(args_list[1])
+        code = int(args_list[1]) if args_list[1].isdigit() else getattr(meari_sdk.meari_commands, args_list[1], None)
 
         p = [str(code)]
 
